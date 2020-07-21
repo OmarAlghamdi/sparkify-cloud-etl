@@ -22,7 +22,7 @@ Below is the is sample of each type of data
 ## ETL Pipeline
 Extraction: Data is copied from S3 into a stang tables in Redshift. The staging tables are `staging_events` and `staging_songs`.
 
-Transformation: Data is transformed in to a [Start Schema](https://en.wikipedia.org/wiki/Star_schema using SQL queries. The schema consists of one fact table `songplays` and 4 dimension tables `users`, `songs`, `artists` & `time`. 
+Transformation: Data is transformed in to a [Start Schema](https://en.wikipedia.org/wiki/Star_schema) using SQL queries. The schema consists of one fact table `songplays` and 4 dimension tables `users`, `songs`, `artists` & `time`. 
 
 - A row in the fact table `songplay` is based on user action `NextSong` from the log data.
 - A row in `users` table is based on 'userId' from the log data. `userId` is the primary key.
