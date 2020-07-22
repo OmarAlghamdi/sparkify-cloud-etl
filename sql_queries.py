@@ -130,25 +130,47 @@ songplay_table_insert = ("""INSERT INTO songplays
                             WHERE se.page='NextSong'
                             """)
 
-user_table_insert = ("""INSERT INTO users (user_id, first_name, last_name, gender, level)
-                        SELECT se.userId, se.firstName, se.lastName, se.gender, se.level
-                        FROM staging_events se
-                        WHERE se.page='NextSong'
-                        """)
+user_table_insert = ("""CREATE TEMP TABLE temp_users AS SELECT * FROM staging_events;
+
+                        BEGIN TRANSACTION;
+                        
+                        UPDATE users
+                        SET level = tu.level
+                        FROM temp_users tu
+                        WHERE users.user_id = tu.userId
+                        AND tu.page='NextSong'
+                        AND users.level != tu.level;
+
+                        DELETE FROM temp_users
+                        USING users
+                        WHERE users.user_id = temp_users.userId
+                        AND temp_users.page='NextSong';
+
+                        INSERT INTO users
+                        SELECT DISTINCT tu.userId, tu.firstName, tu.lastName, tu.gender, tu.level
+                        FROM temp_users tu
+                        WHERE tu.page='NextSong'
+                        AND tu.userId NOT IN (SELECT DISTINCT user_id FROM users);
+
+                        END TRANSACTION;
+
+                        DROP TABLE temp_users;
+                        """)                        
 
 song_table_insert = ("""INSERT INTO songs (song_id, artist_id, year, duration, title)
-                        SELECT ss.song_id, ss.artist_id, ss.year, ss.duration, ss.title
+                        SELECT DISTINCT ss.song_id, ss.artist_id, ss.year, ss.duration, ss.title
                         FROM staging_songs ss
+                        WHERE ss.song_id NOT IN (SELECT DISTINCT song_id FROM songs)
                         """)
 
 artist_table_insert = ("""INSERT INTO artists (artist_id, name, location, latitude, longitude)
-                        SELECT ss.artist_id, ss.artist_name, ss.artist_location, ss.artist_latitude, ss.artist_longitude
-                        FROM staging_songs ss                        
+                        SELECT DISTINCT ss.artist_id, ss.artist_name, ss.artist_location, ss.artist_latitude, ss.artist_longitude
+                        FROM staging_songs ss
+                        WHERE ss.artist_id NOT IN (SELECT DISTINCT artist_id FROM artists)                     
                         """)
-
-
+                        
 time_table_insert = ("""INSERT INTO time (start_time, hour, day, week, month, year, weekday)
-                        SELECT se.ts, EXTRACT(hour from timestamp 'epoch' + se.ts * interval '1 second'),
+                        SELECT DISTINCT se.ts, EXTRACT(hour from timestamp 'epoch' + se.ts * interval '1 second'),
                         EXTRACT(day from timestamp 'epoch' + se.ts / 1000 * interval '1 second'),
                         EXTRACT(week from timestamp 'epoch' + se.ts / 1000 * interval '1 second'), 
                         EXTRACT(month from timestamp 'epoch' + se.ts / 1000 * interval '1 second'),
@@ -156,6 +178,7 @@ time_table_insert = ("""INSERT INTO time (start_time, hour, day, week, month, ye
                         EXTRACT(dow from timestamp 'epoch' + se.ts / 1000 * interval '1 second')
                         FROM staging_events se
                         WHERE se.page='NextSong'
+                        AND se.ts NOT IN (SELECT DISTINCT start_time FROM time)
                         """)
 
 # QUERY LISTS
