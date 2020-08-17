@@ -1,6 +1,6 @@
 # Sparkify Cloud ETL
 
-This is the first project in Udacity's Data Engineering Nanodegree.
+This is the third project in Udacity's Data Engineering Nanodegree.
 
 In this project I played the role of the data engineer in Sparkify the music company to extract data from song files as well as from log file by users.
 Song files are subset of [Million Song Dataset](http://millionsongdataset.com/) & log files are simulated by [eventsim](https://github.com/Interana/eventsim)
